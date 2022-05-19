@@ -48,7 +48,14 @@ $this->params['breadcrumbs'][] = $this->title;
             ['class' => 'yii\grid\SerialColumn'],
             ['class' => 'yii\grid\CheckboxColumn'],
 
-            'id',
+            [
+                'label' => 'ID',
+                'attribute' => 'id',
+                'filterInputOptions' => [
+                    'placeholder' => 'Support format:10, >10, [10,20)',
+                    'class' => 'form-control',
+                ],
+            ],
             'name',
             'code',
             [
