@@ -56,6 +56,9 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 't_status',
                 'filter' => ['ok' => 'OK', 'hold' => 'Hold'],
                 'filterInputOptions' => ['prompt' => 'All', 'class' => 'form-control', 'id' => null],
+                'format' => function($v) {
+                    return $v === 'ok' ? 'OK' : 'Hold';
+                },
             ],
         ],
     ]); ?>
