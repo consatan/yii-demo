@@ -36,10 +36,13 @@ $this->params['breadcrumbs'][] = $this->title;
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'pager' => [
-            'firstPageLabel' => 'first',
-            'lastPageLabel' => 'last',
+            'firstPageLabel' => '<<',
+            'lastPageLabel' => '>>',
             'nextPageLabel' => '>',
             'prevPageLabel' => '<',
+            'linkContainerOptions' => ['class' => ['page-item']],
+            'linkOptions' => ['class' => ['page-link']],
+            'disabledListItemSubTagOptions' => ['class' => 'page-link'],
         ],
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
