@@ -1,15 +1,21 @@
 <?php
 
-class ContactFormCest 
+class ContactFormCest
 {
     public function _before(\FunctionalTester $I)
     {
+        $I->amOnRoute('site/login');
+        $I->submitForm('#login-form', [
+            'LoginForm[username]' => 'admin',
+            'LoginForm[password]' => 'admin',
+        ]);
+
         $I->amOnRoute('site/contact');
     }
 
     public function openContactPage(\FunctionalTester $I)
     {
-        $I->see('Contact', 'h1');        
+        $I->see('Contact', 'h1');
     }
 
     public function submitEmptyForm(\FunctionalTester $I)
@@ -38,7 +44,7 @@ class ContactFormCest
         $I->see('Email is not a valid email address.');
         $I->dontSee('Subject cannot be blank', '.help-inline');
         $I->dontSee('Body cannot be blank', '.help-inline');
-        $I->dontSee('The verification code is incorrect', '.help-inline');        
+        $I->dontSee('The verification code is incorrect', '.help-inline');
     }
 
     public function submitFormSuccessfully(\FunctionalTester $I)
@@ -52,6 +58,6 @@ class ContactFormCest
         ]);
         $I->seeEmailIsSent();
         $I->dontSeeElement('#contact-form');
-        $I->see('Thank you for contacting us. We will respond to you as soon as possible.');        
+        $I->see('Thank you for contacting us. We will respond to you as soon as possible.');
     }
 }
