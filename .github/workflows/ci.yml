@@ -43,5 +43,5 @@ jobs:
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        composer global require php-coveralls/php-coveralls:^2.5
-        php-coveralls --coverage_clover=tests/_output/coverage.xml --json_path=tests/_output/coveralls-upload.json -v
+        composer require php-coveralls/php-coveralls:^2.5
+        vendor/bin/php-coveralls --coverage_clover=tests/_output/coverage.xml --json_path=tests/_output/coveralls-upload.json -v
