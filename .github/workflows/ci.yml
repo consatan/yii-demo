@@ -37,7 +37,7 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Run test suite
-      run: export XDEBUG_MODEL=coverage && vendor/bin/codecept run --coverage --coverage-xml
+      run: export XDEBUG_MODE=coverage && vendor/bin/codecept run --coverage --coverage-xml
 
     - name: Upload coverage result to Coveralls
       env:
