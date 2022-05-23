@@ -13,9 +13,9 @@ The template contains the basic features including user login/logout and a conta
 It includes all commonly used configurations that would allow you to focus on adding new
 features to your application.
 
-[![Latest Stable Version](https://img.shields.io/packagist/v/yiisoft/yii2-app-basic.svg)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![Total Downloads](https://img.shields.io/packagist/dt/yiisoft/yii2-app-basic.svg)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![build](https://github.com/yiisoft/yii2-app-basic/workflows/build/badge.svg)](https://github.com/yiisoft/yii2-app-basic/actions?query=workflow%3Abuild)
+[![build](https://github.com/consatan/yii-demo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/consatan/yii-demo/actions/workflows/ci.yml)
+[![Coverage Status](https://coveralls.io/repos/github/consatan/yii-demo/badge.svg?branch=master)](https://coveralls.io/github/consatan/yii-demo?branch=master)
+
 
 DIRECTORY STRUCTURE
 -------------------
@@ -87,20 +87,20 @@ http://localhost/basic/web/
 Update your vendor packages
 
     docker-compose run --rm php composer update --prefer-dist
-    
+
 Run the installation triggers (creating cookie validation code)
 
-    docker-compose run --rm php composer install    
-    
+    docker-compose run --rm php composer install
+
 Start the container
 
     docker-compose up -d
-    
+
 You can then access the application through the following URL:
 
     http://127.0.0.1:8000
 
-**NOTES:** 
+**NOTES:**
 - Minimum required Docker engine version `17.04` for development (see [Performance tuning for volume mounts](https://docs.docker.com/docker-for-mac/osxfs-caching/))
 - The default configuration uses a host-volume in your home directory `.docker-composer` for composer caches
 
@@ -146,22 +146,22 @@ vendor/bin/codecept run
 
 The command above will execute unit and functional tests. Unit tests are testing the system components, while functional
 tests are for testing user interaction. Acceptance tests are disabled by default as they require additional setup since
-they perform testing in real browser. 
+they perform testing in real browser.
 
 
 ### Running  acceptance tests
 
-To execute acceptance tests do the following:  
+To execute acceptance tests do the following:
 
 1. Rename `tests/acceptance.suite.yml.example` to `tests/acceptance.suite.yml` to enable suite configuration
 
 2. Replace `codeception/base` package in `composer.json` with `codeception/codeception` to install full-featured
    version of Codeception
 
-3. Update dependencies with Composer 
+3. Update dependencies with Composer
 
     ```
-    composer update  
+    composer update
     ```
 
 4. Download [Selenium Server](http://www.seleniumhq.org/download/) and launch it:
@@ -175,13 +175,13 @@ To execute acceptance tests do the following:
     ```
     # for Firefox
     java -jar -Dwebdriver.gecko.driver=~/geckodriver ~/selenium-server-standalone-3.xx.x.jar
-    
+
     # for Google Chrome
     java -jar -Dwebdriver.chrome.driver=~/chromedriver ~/selenium-server-standalone-3.xx.x.jar
-    ``` 
-    
+    ```
+
     As an alternative way you can use already configured Docker container with older versions of Selenium and Firefox:
-    
+
     ```
     docker run --net=host selenium/standalone-firefox:2.53.0
     ```
