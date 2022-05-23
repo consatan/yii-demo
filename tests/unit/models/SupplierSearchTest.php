@@ -42,18 +42,17 @@ class SupplierSearchTest extends \Codeception\Test\Unit
             ['  10  ', ['=', 'id', '10']],
             ['>  10', ['>', 'id', '10']],
             ['  ( 10  ,   20]  ', ['and', ['>', 'id', '10'], ['<=', 'id', '20']]],
+            ['(10,10]', ['id' => '10']],
         ];
     }
 
     public function testIncorrectID()
     {
-        $method = new \ReflectionMethod(SupplierSearch::class, 'filterID');
-        $method->setAccessible(true);
-
-        $model = new SupplierSearch();
-        $dataProvider = $this->getDataProvider();
-        $result = $method->invoke($model, '-10', $dataProvider);
-        verify($result)->equals(false);
+        $model = new SupplierSearch([
+            'id' => '-10',
+        ]);
+        $dataProvider = $model->search([]);
+        $this->assertInstanceOf(ActiveDataProvider::class, $dataProvider);
         verify($model->hasErrors())->equals(true);
         verify($model->getErrors())->equals(['id' => ['ID must be an integer or a range.']]);
     }
@@ -164,5 +163,18 @@ class SupplierSearchTest extends \Codeception\Test\Unit
                 null,
             ],
         ];
+    }
+
+    public function testGetAttributeLabels()
+    {
+        $model = new SupplierSearch();
+        $labels = $model->attributeLabels();
+
+        $this->assertEquals($labels, [
+            'id' => 'ID',
+            'name' => 'Name',
+            'code' => 'Code',
+            't_status' => 'Status',
+        ]);
     }
 }

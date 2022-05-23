@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  ci:
     name: Build
     runs-on: ubuntu-latest
     strategy:
@@ -37,4 +37,13 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Run test suite
-      run: vendor/bin/codecept run
+      env:
+        XDEBUG_MODEL: coverage
+      run: vendor/bin/codecept run --coverage --coverage-xml
+
+    - name: Upload coverage result to Coveralls
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        composer require php-coveralls/php-coveralls:^2.5
+        vendor/bin/php-coveralls --coverage_clover=tests/_output/coverage.xml -v
