@@ -5,6 +5,7 @@ use yii\helpers\Url;
 use yii\grid\ActionColumn;
 use yii\grid\GridView;
 use yii\widgets\Pjax;
+use yii\bootstrap4\Modal;
 use app\models\Supplier;
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\SupplierSearch */
@@ -19,9 +20,23 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <p>
       <?= Html::a('Create Supplier', ['create'], ['class' => 'btn btn-success']) ?>
-      <?= Html::button('Export', ['class' => 'btn btn-secondary', 'disabled' => true, 'id' => 'export-btn']) ?>
+      <?= Html::button('Export', ['class' => 'btn btn-secondary', 'disabled' => true, 'id' => 'column-select-btn', 'data-toggle' => 'modal', 'data-target' => '#export-columns-selection']) ?>
       <span class="alert alert-secondary collapse" role="alert" id="export-tips"></span>
     </p>
+    <?php Modal::begin([
+        'options' => ['id' => 'export-columns-selection'],
+        'title' => 'Select export columns',
+        'closeButton' => ['label'],
+        'centerVertical' => true,
+        'footer' => Html::button('Export', ['class' => 'btn btn-primary', 'id' => 'export-btn']),
+    ]); ?>
+    <?php foreach($searchModel->attributeLabels() as $name => $label): ?>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" value="<?= $name ?>" id="column-<?= $name ?>" checked <?= $name === 'id' ? 'disabled' : '' ?>>
+      <label class="form-check-label" for="column-<?= $name ?>"><?= $label ?></label>
+    </div>
+    <?php endforeach ?>
+    <?php Modal::end(); ?>
 
     <?php Pjax::begin(); ?>
 
@@ -69,6 +84,7 @@ $this->params['breadcrumbs'][] = $this->title;
 jQuery(function($) {
   var selectAllPage = false,
       exportBtn = $('#export-btn'),
+      columnSelectBtn = $('#column-select-btn'),
       exportTips = $('#export-tips'),
       selectAllTips = 'All suppliers on this page have been selected. <a href="javascript:void(0);">Select all suppliers that match this search</a>',
       clearAllTips = 'All suppliers in this search have been selected. <a href="javascript:void(0);">Clear selection</a>',
@@ -84,7 +100,7 @@ jQuery(function($) {
 
   $(document).delegate('.select-on-check-all, .checkbox-row', 'change', function(e) {
     selectAllPage = false;
-    exportBtn.prop('disabled', $('[name="selection[]"]:checked').length === 0);
+    columnSelectBtn.prop('disabled', $('[name="selection[]"]:checked').length === 0);
 
     // if ($('.select-on-check-all:checked').length > 0 && $('.pagination').length > 0) {
     if ($('.select-on-check-all:checked').length > 0) {
@@ -97,9 +113,11 @@ jQuery(function($) {
 
   exportBtn.click(function() {
     var ids = [],
+        columns = [],
         url = '<?= Url::toRoute('supplier/export') ?>';
 
     url += url.indexOf('?') !== -1 ? '&' : '?';
+
     if (!selectAllPage) {
       $('[name="selection[]"]:checked').each(function(i, item) {
         ids.push(item.value);
@@ -109,13 +127,18 @@ jQuery(function($) {
       url += window.location.search.slice(1);
     }
 
+    $('#export-columns-selection input[type="checkbox"]:checked').each(function(i, item) {
+      columns.push(item.value);
+    });
+    url += '&columns=' + columns.join();
+
     window.open(url, '_blank');
   });
 
   $(document).on('pjax:complete', function() {
     resetExportTips();
     exportTips.addClass('collapse');
-    exportBtn.prop('disabled', true);
+    columnSelectBtn.prop('disabled', true);
   })
 });
 </script>
