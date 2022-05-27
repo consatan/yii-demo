@@ -62,58 +62,44 @@ class SupplierSearchTest extends \Codeception\Test\Unit
      */
     public function testExport(array $params, ?array $where)
     {
-        $method = new \ReflectionMethod(SupplierSearch::class, 'export');
-        $method->setAccessible(true);
-
-        $dataProvider = $this->getDataProvider();
-        $result = $method->invoke(new SupplierSearch(), $params, $dataProvider);
-        verify($result)->equals($dataProvider);
-        verify($result->query->where)->equals($where);
+        $model = new SupplierSearch(array_intersect_key($params, [
+            'id' => null,
+            'name' => null,
+            'code' => null,
+            't_status' => null,
+        ]));
+        $dataProvider = $model->export($params);
+        $this->assertInstanceOf(ActiveDataProvider::class, $dataProvider);
+        $this->assertEquals($dataProvider->query->where, $where);
     }
 
     protected function exportProvider(): array
     {
         return [
-            [['select_all' => 1], null],
-            [['select_all' => 0, 'checked_ids' => '1,2,3'], ['in', 'id', [1, 2, 3]]],
-            [['select_all' => 2, 'checked_ids' => '1,2,3'], ['in', 'id', [1, 2, 3]]],
-            [['checked_ids' => '1,2,3'], ['in', 'id', [1, 2, 3]]],
-            [['checked_ids' => '1,2,1,3,'], ['in', 'id', [1, 2, 3]]],
+            [[], null],
+            [['ids' => '1,2,3'], ['in', 'id', [1, 2, 3]]],
+            [
+                ['id' => '>10', 'name' => 'ab', 'code' => 'cd', 't_status' => 'ok'],
+                ['and', ['>', 'id', '10'], ['like', 'name', 'ab'], ['like', 'code', 'cd'], ['t_status' => 'ok']],
+            ],
         ];
     }
 
-    /**
-     * @dataProvider incorrectExportProvider
-     */
-    public function testIncorrectExportParam(array $params)
+    public function testIncorrectExportParam()
     {
-        $method = new \ReflectionMethod(SupplierSearch::class, 'export');
-        $method->setAccessible(true);
-
+        $params = ['ids' => 'abc'];
         $model = new SupplierSearch();
-        $dataProvider = $this->getDataProvider();
-        $result = $method->invoke($model, $params, $dataProvider);
-        verify($result)->equals($dataProvider);
-        verify($model->hasErrors())->equals(true);
-        verify($model->getErrors())->equals(['id' => ['Please select export ids']]);
-    }
-
-    protected function incorrectExportProvider(): array
-    {
-        return [
-            [[]],
-            [['select_all' => 0]],
-            [['select_all' => 3]],
-            [['select_all' => 3, 'checked_ids' => '']],
-            [['checked_ids' => '']],
-            [['checked_ids' => 'abc,def']],
-        ];
+        $dataProvider = $model->export($params);
+        $this->assertInstanceOf(ActiveDataProvider::class, $dataProvider);
+        $this->assertTrue($model->hasErrors());
+        $this->assertEquals(['ids' => ['invalid ids format']], $model->getErrors());
+        $this->assertEquals(['invalid ids format'], \Yii::$app->session->getFlash('error'));
     }
 
     /**
      * @dataProvider searchProvider
      */
-    public function testSearch(array $params, bool $export, ?array $where)
+    public function testSearch(array $params, ?array $where)
     {
         $model = new SupplierSearch(array_intersect_key($params, [
             'id' => null,
@@ -121,12 +107,11 @@ class SupplierSearchTest extends \Codeception\Test\Unit
             'code' => null,
             't_status' => null,
         ]));
-        $result = $model->search($params, $refExport);
+        $result = $model->search($params);
 
         verify($model->hasErrors())->equals(false);
         verify($result)->instanceOf(ActiveDataProvider::class);
         verify($result->query->where)->equals($where);
-        verify($refExport)->equals($export);
     }
 
     protected function searchProvider(): array
@@ -134,35 +119,39 @@ class SupplierSearchTest extends \Codeception\Test\Unit
         return [
             [
                 ['t_status' => 'hold', 'export' => 1, 'select_all' => 1],
-                true,
                 ['t_status' => 'hold'],
             ],
             [
                 ['id' => '10', 'name' => 'ab', 'code' => 'cd', 't_status' => 'ok'],
-                false,
                 ['and', ['=', 'id', '10'], ['like', 'name', 'ab'], ['like', 'code', 'cd'], ['t_status' => 'ok']],
             ],
             [
                 ['id' => '>10', 'name' => 'ab', 'code' => 'cd', 't_status' => 'ok'],
-                false,
                 ['and', ['>', 'id', '10'], ['like', 'name', 'ab'], ['like', 'code', 'cd'], ['t_status' => 'ok']],
             ],
             [
                 ['name' => 'ab'],
-                false,
                 ['like', 'name', 'ab'],
             ],
             [
                 ['t_status' => 'hold'],
-                false,
                 ['t_status' => 'hold'],
             ],
             [
                 [],
-                false,
                 null,
             ],
         ];
+    }
+
+    public function testIncorrectSearchParam()
+    {
+        $params = ['t_status' => 'other'];
+        $model = new SupplierSearch($params);
+        $dataProvider = $model->search($params);
+        $this->assertInstanceOf(ActiveDataProvider::class, $dataProvider);
+        $this->assertTrue($model->hasErrors());
+        $this->assertEquals(['t_status' => ['Status is invalid.']], $model->getErrors());
     }
 
     public function testGetAttributeLabels()

@@ -11,6 +11,14 @@ use app\models\Supplier;
  */
 class SupplierSearch extends Supplier
 {
+    public $id;
+
+    public $name;
+
+    public $code;
+
+    public $t_status;
+
     /**
      * {@inheritdoc}
      */
@@ -143,6 +151,7 @@ class SupplierSearch extends Supplier
         $dataProvider = $this->getDataProvider();
         if (1 !== preg_match('/^(\d+,)*\d+$/', $ids)) {
             $this->addError('ids', 'invalid ids format');
+            \Yii::$app->session->addFlash('error', 'invalid ids format');
             return $dataProvider;
         }
 

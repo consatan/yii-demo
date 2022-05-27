@@ -23,6 +23,5 @@ coverage:
         include:
             - models/*
             - controllers/*
-            - utils/*
-              #- commands/*
-              #- mail/*
+            #- commands/*
+            #- mail/*
