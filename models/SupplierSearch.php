@@ -11,17 +11,14 @@ use app\models\Supplier;
  */
 class SupplierSearch extends Supplier
 {
-    public $id;
-    public $name;
-    public $code;
-    public $t_status;
     /**
      * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['id', 'name', 'code', 't_status'], 'safe'],
+            [['id', 'name', 'code'], 'safe'],
+            ['t_status', 'in', 'range' => ['ok', 'hold']],
         ];
     }
 
@@ -48,22 +45,12 @@ class SupplierSearch extends Supplier
      * Creates data provider instance with search query applied
      *
      * @param array $params
-     * @param bool &$export
      *
      * @return \yii\data\ActiveDataProvider
      */
-    public function search(array $params, ?bool &$export = false): ActiveDataProvider
+    public function search(array $params): ActiveDataProvider
     {
-        $query = Supplier::find();
-
-        // add conditions that should always apply here
-
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-            'pagination' => [
-                'pageSize' => 50,
-            ]
-        ]);
+        $dataProvider = $this->getDataProvider();
 
         $this->load($params);
 
@@ -77,47 +64,9 @@ class SupplierSearch extends Supplier
             return $dataProvider;
         }
 
-        $query->andFilterWhere(['like', 'name', $this->name])
+        $dataProvider->query->andFilterWhere(['like', 'name', $this->name])
             ->andFilterWhere(['like', 'code', $this->code])
             ->andFilterWhere(['t_status' => $this->t_status]);
-
-        if (!empty($params['export'])) {
-            $export = true;
-            return $this->export($params, $dataProvider);
-        }
-
-        return $dataProvider;
-    }
-
-    /**
-     * get export dataProvider
-     *
-     * @param array $params
-     * @param \yii\data\ActiveDataProvider $dataProvider
-     *
-     * @return \yii\data\ActiveDataProvider
-     */
-    protected function export(array $params, ActiveDataProvider $dataProvider): ActiveDataProvider
-    {
-        $selectAll = isset($params['select_all']) && 1 === (int)$params['select_all'];
-        if (!$selectAll) {
-            if (empty($params['checked_ids'])) {
-                $this->addError('id', 'Please select export ids');
-
-                return $dataProvider;
-            }
-
-            $checkedIds = array_values(array_unique(
-                array_map('intval', array_filter(explode(',', trim($params['checked_ids'])), 'is_numeric'))
-            ));
-            if (empty($checkedIds)) {
-                $this->addError('id', 'Please select export ids');
-
-                return $dataProvider;
-            }
-
-            $dataProvider->query->andFilterWhere(['in', 'id', $checkedIds]);
-        }
 
         return $dataProvider;
     }
@@ -175,5 +124,40 @@ class SupplierSearch extends Supplier
         }
 
         return true;
+    }
+
+    /**
+     * Creates data provider instance with export
+     *
+     * @param array $params
+     *
+     * @return \yii\data\ActiveDataProvider
+     */
+    public function export(array $params): ActiveDataProvider
+    {
+        $ids = trim($params['ids'] ?? '');
+        if (empty($ids)) {
+            return $this->search($params);
+        }
+
+        $dataProvider = $this->getDataProvider();
+        if (1 !== preg_match('/^(\d+,)*\d+$/', $ids)) {
+            $this->addError('ids', 'invalid ids format');
+            return $dataProvider;
+        }
+
+        $dataProvider->query->where(['in', 'id', explode(',', $ids)]);
+        return $dataProvider;
+    }
+
+    protected function getDataProvider()
+    {
+        $query = Supplier::find();
+        return new ActiveDataProvider([
+            'query' => $query,
+            // 'pagination' => [
+            //     'pageSize' => 50,
+            // ]
+        ]);
     }
 }

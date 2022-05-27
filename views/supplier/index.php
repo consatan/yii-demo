@@ -18,34 +18,24 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Create Supplier', ['create'], ['class' => 'btn btn-success']) ?>
-        <?= Html::button('Export', ['class' => 'btn btn-secondary collapse', 'id' => 'export-btn']) ?>
+      <?= Html::a('Create Supplier', ['create'], ['class' => 'btn btn-success']) ?>
+      <?= Html::button('Export', ['class' => 'btn btn-secondary', 'disabled' => true, 'id' => 'export-btn']) ?>
+      <span class="alert alert-secondary collapse" role="alert" id="export-tips"></span>
     </p>
 
-    <div class="alert alert-secondary collapse" role="alert" id="select-all">
-    All <span id="current-rows"><?= sizeof($dataProvider->getModels()) ?></span> conversations on this page have been selected. <a href='javascript:selectAll(1);'>Select all conversations that match this search</a>
-    </div>
-    <div class="alert alert-secondary collapse" role="alert" id="clear-all">
-      All conversations in this search have been selected. <a href='javascript:selectAll(0);'>clear selection</a>
-    </div>
-
     <?php Pjax::begin(); ?>
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'pager' => [
+            'class' => 'yii\bootstrap4\LinkPager',
             'firstPageLabel' => '<<',
             'lastPageLabel' => '>>',
             'nextPageLabel' => '>',
             'prevPageLabel' => '<',
-            'linkContainerOptions' => ['class' => ['page-item']],
-            'linkOptions' => ['class' => ['page-link']],
-            'disabledListItemSubTagOptions' => ['class' => 'page-link'],
         ],
         'columns' => [
-            ['class' => 'yii\grid\SerialColumn'],
             ['class' => 'yii\grid\CheckboxColumn'],
 
             [
@@ -73,64 +63,59 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php Pjax::end(); ?>
 
 </div>
+<!-- use block to highlight javascript syntax -->
 <?php \app\widgets\JsBlock::begin() ?>
 <script>
-let selectAllPage = false;
-function selectAll(all) {
-    if (all) {
-        selectAllPage = true;
-        $('#select-all').hide();
-        $('#clear-all').show();
-    } else {
-        selectAllPage = false;
-        $('#clear-all').hide();
-        $('#select-all').show();
-    }
-};
 jQuery(function($) {
-  var checkfn = function() {
-    $('.select-on-check-all, .checkbox-row').change(function() {
-      selectAllPage = false;
+  var selectAllPage = false,
+      exportBtn = $('#export-btn'),
+      exportTips = $('#export-tips'),
+      selectAllTips = 'All suppliers on this page have been selected. <a href="javascript:void(0);">Select all suppliers that match this search</a>',
+      clearAllTips = 'All suppliers in this search have been selected. <a href="javascript:void(0);">Clear selection</a>',
+      resetExportTips = function() {
+        selectAllPage = false;
+        exportTips.html(selectAllTips);
+      };
 
-      if ($('[name="selection[]"]:checked').length > 0) {
-        $('#export-btn').removeClass('collapse');
-      } else {
-        $('#export-btn').addClass('collapse');
-      }
-
-      if ($('.select-on-check-all:checked').length > 0 && $('.pagination').length > 0) {
-          $('#select-all').show();
-          return;
-      }
-
-      $('#select-all').hide();
-      $('#clear-all').hide();
-    });
-  };
-
-
-  $('#export-btn').click(function() {
-      var url = window.location.href;
-      var checkedIds = [];
-      if (!selectAllPage) {
-        $('[name="selection[]"]:checked').each(function(i, item) {
-          checkedIds.push(item.value);
-        });
-      }
-      checkedIds = checkedIds.join();
-      url += (url.indexOf("?") === -1 ? "?" : "&") + "export=1&checked_ids=" + checkedIds + "&select_all=" + (selectAllPage ? 1 : 0);
-
-      window.open(url, "_blank");
+  exportTips.delegate('a', 'click', function(e) {
+    selectAllPage = !selectAllPage;
+    exportTips.html(selectAllPage ? clearAllTips : selectAllTips);
   });
 
-  checkfn();
-  $(document).on('pjax:complete', function() {
+  $(document).delegate('.select-on-check-all, .checkbox-row', 'change', function(e) {
     selectAllPage = false;
-    $('#select-all').hide();
-    $('#clear-all').hide();
-    $('#export-btn').addClass('collapse');
-    $('#current-rows').text($('[name="selection[]"]').length);
-    checkfn();
+    exportBtn.prop('disabled', $('[name="selection[]"]:checked').length === 0);
+
+    // if ($('.select-on-check-all:checked').length > 0 && $('.pagination').length > 0) {
+    if ($('.select-on-check-all:checked').length > 0) {
+      resetExportTips();
+      exportTips.removeClass('collapse');
+    } else {
+      exportTips.addClass('collapse');
+    }
+  });
+
+  exportBtn.click(function() {
+    var ids = [],
+        url = '<?= Url::toRoute('supplier/export') ?>';
+
+    url += url.indexOf('?') !== -1 ? '&' : '?';
+    if (!selectAllPage) {
+      $('[name="selection[]"]:checked').each(function(i, item) {
+        ids.push(item.value);
+      });
+      url += 'ids=' + ids.join();
+    } else {
+      url += window.location.search.slice(1);
+    }
+
+    window.open(url, '_blank');
+  });
+
+  $(document).on('pjax:complete', function() {
+    resetExportTips();
+    exportTips.addClass('collapse');
+    exportBtn.prop('disabled', true);
   })
 });
 </script>
