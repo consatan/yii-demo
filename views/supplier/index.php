@@ -20,11 +20,11 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <p>
       <?= Html::a('Create Supplier', ['create'], ['class' => 'btn btn-success']) ?>
-      <?= Html::button('Export', ['class' => 'btn btn-secondary', 'disabled' => true, 'id' => 'column-select-btn', 'data-toggle' => 'modal', 'data-target' => '#export-columns-selection']) ?>
-      <span class="alert alert-secondary collapse" role="alert" id="export-tips"></span>
+      <?= Html::button('Export', ['class' => 'btn btn-secondary', 'disabled' => true, 'id' => 'column-select-btn', 'data-toggle' => 'modal', 'data-target' => '#export-modal']) ?>
+      <span class="alert alert-secondary collapse" role="alert" id="export-tip"></span>
     </p>
     <?php Modal::begin([
-        'options' => ['id' => 'export-columns-selection'],
+        'options' => ['id' => 'export-modal'],
         'title' => 'Select export columns',
         'closeButton' => ['label'],
         'centerVertical' => true,
@@ -41,6 +41,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php Pjax::begin(); ?>
 
     <?= GridView::widget([
+        'options' => ['id' => 'supplier-grid'],
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'pager' => [
@@ -53,14 +54,7 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             ['class' => 'yii\grid\CheckboxColumn'],
 
-            [
-                'label' => 'ID',
-                'attribute' => 'id',
-                'filterInputOptions' => [
-                    'placeholder' => 'Support format:10, >10, [10,20)',
-                    'class' => 'form-control',
-                ],
-            ],
+            'id',
             'name',
             'code',
             [
@@ -83,61 +77,85 @@ $this->params['breadcrumbs'][] = $this->title;
 <script>
 jQuery(function($) {
   var selectAllPage = false,
-      exportBtn = $('#export-btn'),
       columnSelectBtn = $('#column-select-btn'),
-      exportTips = $('#export-tips'),
-      selectAllTips = 'All suppliers on this page have been selected. <a href="javascript:void(0);">Select all suppliers that match this search</a>',
-      clearAllTips = 'All suppliers in this search have been selected. <a href="javascript:void(0);">Clear selection</a>',
-      resetExportTips = function() {
+      exportBtn = $('#export-btn'),
+      exportTip = $('#export-tip'),
+      exportModal = $('#export-modal'),
+      selectAllTip = 'All {{number}} suppliers on this page have been selected. <a href="javascript:void(0);">Select all suppliers that match this search</a>',
+      clearAllTip = 'All suppliers in this search have been selected. <a href="javascript:void(0);">Clear selection</a>',
+      resetExportTip = function() {
         selectAllPage = false;
-        exportTips.html(selectAllTips);
+        exportTip.html(selectAllTip.replace('{{number}}', $('#supplier-grid tbody tr').length));
+      },
+      resetAll = function() {
+        selectAllPage = false;
+        exportTip.addClass('collapse');
+        resetExportTip();
+        columnSelectBtn.prop('disabled', true);
+        $('.select-on-check-all').prop('checked', false);
+        $('#supplier-grid [name="selection[]"]:checked').each(function(i, item) {
+          item.checked = false;
+        });
       };
 
-  exportTips.delegate('a', 'click', function(e) {
+  exportTip.delegate('a', 'click', function(e) {
     selectAllPage = !selectAllPage;
-    exportTips.html(selectAllPage ? clearAllTips : selectAllTips);
+    if (selectAllPage) {
+      exportTip.html(clearAllTip);
+    } else {
+      resetAll();
+    }
   });
 
   $(document).delegate('.select-on-check-all, .checkbox-row', 'change', function(e) {
     selectAllPage = false;
-    columnSelectBtn.prop('disabled', $('[name="selection[]"]:checked').length === 0);
+    var checkedNum = $('#supplier-grid [name="selection[]"]:checked').length;
+    columnSelectBtn.prop('disabled', checkedNum === 0);
 
-    // if ($('.select-on-check-all:checked').length > 0 && $('.pagination').length > 0) {
-    if ($('.select-on-check-all:checked').length > 0) {
-      resetExportTips();
-      exportTips.removeClass('collapse');
+    if (checkedNum > 0 && $('.select-on-check-all:checked').length > 0) {
+      if ($('.pagination').length > 0) {
+        resetExportTip();
+      } else {
+        selectAllPage = true;
+        exportTip.html(clearAllTip);
+      }
+      exportTip.removeClass('collapse');
     } else {
-      exportTips.addClass('collapse');
+      exportTip.addClass('collapse');
     }
   });
 
   exportBtn.click(function() {
     var ids = [],
-        columns = [],
         url = '<?= Url::toRoute('supplier/export') ?>';
 
     url += url.indexOf('?') !== -1 ? '&' : '?';
-
     if (!selectAllPage) {
-      $('[name="selection[]"]:checked').each(function(i, item) {
+      $('#supplier-grid [name="selection[]"]:checked').each(function(i, item) {
         ids.push(item.value);
       });
-      url += 'ids=' + ids.join();
+      url += 'SupplierSearch[export_ids]=' + ids.join();
     } else {
       url += window.location.search.slice(1);
     }
 
-    $('#export-columns-selection input[type="checkbox"]:checked').each(function(i, item) {
-      columns.push(item.value);
+    exportModal.find('input[type="checkbox"]:checked').each(function(i, item) {
+      url += '&SupplierSearch[export_columns][]=' + item.value;
     });
-    url += '&columns=' + columns.join();
 
     window.open(url, '_blank');
+    exportModal.modal('toggle');
+  });
+
+  exportModal.on('show.bs.modal', function() {
+    $(this).find('input[type="checkbox"]:not(:checked)').each(function(i, item) {
+      item.checked = true;
+    });
   });
 
   $(document).on('pjax:complete', function() {
-    resetExportTips();
-    exportTips.addClass('collapse');
+    exportTip.addClass('collapse');
+    resetExportTip();
     columnSelectBtn.prop('disabled', true);
   })
 });

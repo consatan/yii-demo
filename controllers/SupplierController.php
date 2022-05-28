@@ -4,19 +4,20 @@ namespace app\controllers;
 
 use app\models\Supplier;
 use app\models\SupplierSearch;
+use app\services\SupplierService;
 use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
+use yii\web\BadRequestHttpException;
 use yii\filters\VerbFilter;
+use yii\helpers\VarDumper;
 
 /**
  * SupplierController implements the CRUD actions for Supplier model.
  */
 class SupplierController extends Controller
 {
-    /**
-     * {@inheritdoc}
-     */
+    /** {@inheritdoc} */
     public function behaviors()
     {
         return array_merge(
@@ -45,7 +46,7 @@ class SupplierController extends Controller
      */
     public function actionIndex()
     {
-        $searchModel = new SupplierSearch();
+        $searchModel = new SupplierSearch(['scenario' => SupplierSearch::SCENARIO_SEARCH]);
         $dataProvider = $searchModel->search($this->request->queryParams);
 
         return $this->render('index', [
@@ -57,6 +58,7 @@ class SupplierController extends Controller
     /**
      * Creates a new Supplier model.
      * If creation is successful, the browser will be redirected to the 'index' page.
+     *
      * @return string|\yii\web\Response
      */
     public function actionCreate()
@@ -79,36 +81,17 @@ class SupplierController extends Controller
     /**
      * Export selected to csv
      *
-     * @return void|string  return error message in index page if validation fails
+     * @return void
+     * @throws \yii\web\BadRequestHttpException throws if validation fails
      */
     public function actionExport()
     {
-        $searchModel = new SupplierSearch();
+        $searchModel = new SupplierSearch(['scenario' => SupplierSearch::SCENARIO_EXPORT]);
         $dataProvider = $searchModel->export($this->request->queryParams);
         if ($searchModel->hasErrors()) {
-            return $this->render('index', [
-                'searchModel' => $searchModel,
-                'dataProvider' => $dataProvider,
-            ]);
+            throw new BadRequestHttpException(VarDumper::export($searchModel->getErrors()));
         }
 
-        header("Cache-Control: public");
-        header("Content-Description: File Transfer");
-        header("Content-Disposition: attachment; filename=supplier_" . date('YmdHis') . ".csv");
-        header("Content-Type: application/octet-stream");
-        header("Content-Transfer-Encoding: binary");
-
-        // Using `$this->response->sendStreamAsFile` requires waiting for db query to complete
-        // and write all bytes to the stream before send response.
-        // The client must wait for the response to be ready before starting the download.
-        //
-        // Use batch db query along with `php://output` to output stream, save client time and server's memory(or disk space)
-        $handle = fopen('php://output', 'wb');
-        fputcsv($handle, ['id', 'name', 'code', 'status']);
-        foreach ($dataProvider->query->each() as $supplier) {
-            fputcsv($handle, [$supplier->id, $supplier->name, $supplier->code, $supplier->t_status]);
-        }
-        fclose($handle);
-        exit;
+        return SupplierService::exportToCsv($searchModel, $dataProvider);
     }
 }

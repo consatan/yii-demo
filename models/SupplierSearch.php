@@ -11,28 +11,45 @@ use app\models\Supplier;
  */
 class SupplierSearch extends Supplier
 {
+    // @var string export scenario
+    const SCENARIO_EXPORT = 'export';
+
+    // @var string search scenario
+    const SCENARIO_SEARCH = 'search';
+
+    // @var int|string
     public $id;
 
+    // @var string
     public $name;
 
+    // @var string|null
     public $code;
 
+    // @var string
     public $t_status;
 
-    /**
-     * {@inheritdoc}
-     */
+    // @var string
+    public $export_ids;
+
+    // @var string[]
+    public $export_columns;
+
+    /** {@inheritdoc} */
     public function rules()
     {
         return [
-            [['id', 'name', 'code'], 'safe'],
+            ['id', 'match', 'pattern' => '/^(=|[><]=?)?\s*(\d+)$/'],
+            ['code', 'string', 'length' => [1, 3]],
+            ['name', 'string', 'length' => [1, 50]],
             ['t_status', 'in', 'range' => ['ok', 'hold']],
+            ['export_ids', 'match', 'pattern' => '/^(\d+,)*\d+$/', 'on' => self::SCENARIO_EXPORT],
+            ['export_columns', 'default', 'value' => ['id'], 'on' => self::SCENARIO_EXPORT],
+            ['export_columns', 'in', 'range' => $this->attributes(), 'allowArray' => true, 'on' => self::SCENARIO_EXPORT],
         ];
     }
 
-    /**
-     * {@inheritdoc}
-     */
+    /** {@inheritdoc} */
     public function attributeLabels()
     {
         $labels = parent::attributeLabels();
@@ -40,13 +57,13 @@ class SupplierSearch extends Supplier
         return $labels;
     }
 
-    /**
-     * {@inheritdoc}
-     */
+    /** {@inheritdoc} */
     public function scenarios()
     {
-        // bypass scenarios() implementation in the parent class
-        return Model::scenarios();
+        return [
+            self::SCENARIO_EXPORT => ['id', 'name', 'code', 't_status', 'export_ids', 'export_columns'],
+            self::SCENARIO_SEARCH => ['id', 'name', 'code', 't_status'],
+        ];
     }
 
     /**
@@ -63,13 +80,15 @@ class SupplierSearch extends Supplier
         $this->load($params);
 
         if (!$this->validate()) {
-            // uncomment the following line if you do not want to return any records when validation fails
-            // $query->where('0=1');
             return $dataProvider;
         }
 
-        if ($this->id && !$this->filterID($this->id, $dataProvider)) {
-            return $dataProvider;
+        if ($this->id) {
+            if (is_numeric($this->id)) {
+                $dataProvider->query->andFilterWhere(['id' => $this->id]);
+            } else {
+                $dataProvider->query->andFilterCompare('id', $this->id);
+            }
         }
 
         $dataProvider->query->andFilterWhere(['like', 'name', $this->name])
@@ -77,61 +96,6 @@ class SupplierSearch extends Supplier
             ->andFilterWhere(['t_status' => $this->t_status]);
 
         return $dataProvider;
-    }
-
-    /**
-     * ID column filter
-     * support following format:
-     * - single number
-     * - number range, e.g. >10
-     * - number interval, e.g. [10, 400)
-     *
-     * @param string $id
-     * @param \yii\data\ActiveDataProvider $dataProvider
-     *
-     * @return bool
-     */
-    protected function filterID(string $id, ActiveDataProvider $dataProvider): bool
-    {
-        $query = $dataProvider->query;
-        if (1 === preg_match('/^(=|[><]=?)?\s*(\d+)$/', trim($id), $match)) {
-            $val = (int)$match[2];
-            $cond = $match[1] ?? '=';
-
-            $query->andFilterCompare('id', "{$cond}{$val}");
-        } elseif (1 === preg_match('/^(\[|\()\s*(\d+)\s*,\s*(\d+)\s*(\]|\))$/', trim($id), $match)) {
-            $cond1 = $match[1] === '[' ? '>=' : '>';
-            $cond2 = $match[4] === ']' ? '<=' : '<';
-
-            $val1 = (int)$match[2];
-            $val2 = (int)$match[3];
-
-            if ($val1 === $val2) {
-                $query->andFilterWhere(['id' => $val1]);
-            } else {
-                // [20, 10)  wrong format, convert to (10, 20]
-                if ($val1 > $val2) {
-                    $tmp = $val1;
-                    $val1 = $val2;
-                    $val2 = $tmp;
-
-                    $tmp = $cond1;
-                    $cond1 = $cond2;
-                    $cond2 = $tmp;
-
-                    $cond1 = $cond1 === '<' ? '>' : '>=';
-                    $cond2 = $cond2 === '>' ? '<' : '<=';
-                }
-
-                $query->andFilterCompare('id', "{$cond1}{$val1}")->andFilterCompare('id', "{$cond2}{$val2}");
-            }
-        } else {
-            $this->addError('id', 'ID must be an integer or a range.');
-
-            return false;
-        }
-
-        return true;
     }
 
     /**
@@ -143,27 +107,34 @@ class SupplierSearch extends Supplier
      */
     public function export(array $params): ActiveDataProvider
     {
-        $ids = trim($params['ids'] ?? '');
-        if (empty($ids)) {
-            return $this->search($params);
-        }
-
         $dataProvider = $this->getDataProvider();
-        if (1 !== preg_match('/^(\d+,)*\d+$/', $ids)) {
-            $this->addError('ids', 'invalid ids format');
-            \Yii::$app->session->addFlash('error', 'invalid ids format');
+
+        $this->load($params);
+        if (!$this->validate()) {
             return $dataProvider;
         }
 
-        $dataProvider->query->where(['in', 'id', explode(',', $ids)]);
+        if (empty($this->export_ids)) {
+            $this->scenario = self::SCENARIO_SEARCH;
+            $dataProvider = $this->search($params);
+        } else {
+            $dataProvider->query->where(['in', 'id', explode(',', $this->export_ids)]);
+        }
+
+        $dataProvider->query->select(array_unique($this->export_columns));
+
         return $dataProvider;
     }
 
-    protected function getDataProvider()
+    /**
+     * Create data provider instance
+     *
+     * @return \yii\data\ActiveDataProvider
+     */
+    protected function getDataProvider(): ActiveDataProvider
     {
-        $query = Supplier::find();
         return new ActiveDataProvider([
-            'query' => $query,
+            'query' => Supplier::find(),
             // 'pagination' => [
             //     'pageSize' => 50,
             // ]

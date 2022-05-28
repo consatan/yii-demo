@@ -12,12 +12,23 @@ class m220518_082454_create_supplier_table extends Migration
      */
     public function safeUp()
     {
-        $this->createTable('{{%supplier}}', [
+        $tableOptions = '';
+        $columns = [
             'id' => $this->primaryKey()->unsigned(),
             'name' => $this->string(50)->notNull()->defaultValue(''),
-            'code' => $this->char(3)->append('CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL'),
-            't_status' => "enum('ok', 'hold') CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT 'ok'",
-        ], 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci');
+            'code' => $this->char(3)->defaultValue(null),
+            't_status' => $this->string(4)->notNull()->defaultValue('ok'),
+        ];
+
+        if ($this->db->driverName === 'mysql') {
+            $tableOptions = 'ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci';
+            $columns['code'] = $this->char(3)->append('CHARACTER SET ascii COLLATE ascii_general_ci DEFAULT NULL');
+            $columns['t_status'] = "enum('ok', 'hold') CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL DEFAULT 'ok'";
+        } elseif ($this->db->driverName === 'sqlite') {
+            $columns['t_status'] = "TEXT CHECK(t_status IN ('ok', 'hold')) NOT NULL DEFAULT 'ok'";
+        }
+
+        $this->createTable('{{%supplier}}', $columns, $tableOptions);
 
         $this->createIndex('uk_code', '{{%supplier}}', 'code', true);
 
