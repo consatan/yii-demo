@@ -24,5 +24,6 @@ coverage:
             - models/*
             - controllers/*
             - services/*
+            - widgets/*
             #- commands/*
             #- mail/*

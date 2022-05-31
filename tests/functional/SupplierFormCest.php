@@ -17,24 +17,24 @@ class SupplierFormCest
     {
         $I->amOnRoute('supplier/index');
 
-        $I->expectTo('supplier title');
+        $I->expect('supplier title');
         $I->see('Supplier', 'h1');
         $I->see('Supplier', '.breadcrumb-item.active');
 
-        $I->expectTo('create and export button');
+        $I->expect('create and export button');
         $I->seeLink('Create Supplier', Url::toRoute('/supplier/create'));
         $I->seeElement('#column-select-btn:disabled');
 
-        $I->expectTo('items summary');
+        $I->expect('items summary');
         $I->see('Showing 1-20 of', '.summary');
 
-        $I->expectTo('sort by field link');
+        $I->expect('sort by field link');
         $I->seeLink('ID');
         $I->seeLink('Name');
         $I->seeLink('Code');
         $I->seeLink('Status');
 
-        $I->expectTo('pagination block');
+        $I->expect('pagination block');
         $I->seeElement('ul.pagination');
         $I->seeLink('10', Url::toRoute(['/supplier/index', 'page' => 10]));
         $I->seeLink('>', Url::toRoute(['/supplier/index', 'page' => 2]));
@@ -44,11 +44,11 @@ class SupplierFormCest
     public function createSupplierWithIncorrect(\FunctionalTester $I)
     {
         $I->amOnRoute('supplier/create');
-        $I->expectTo('see breadcrumb');
+        $I->expect('see breadcrumb');
         $I->see('Create Supplier', '.breadcrumb-item.active');
 
         $I->submitForm('#supplier-form', []);
-        $I->expectTo('see name error');
+        $I->expect('name error');
         $I->see('Name cannot be blank.', '.help-block');
 
         $I->submitForm('#supplier-form', [
@@ -56,7 +56,7 @@ class SupplierFormCest
             'Supplier[code]' => 'etc',
         ]);
 
-        $I->expectTo('see code error');
+        $I->expect('code error');
         $I->see('Code "etc" has already been taken.', '.help-block');
 
         $I->submitForm('#supplier-form', [
@@ -65,7 +65,7 @@ class SupplierFormCest
             'Supplier[t_status]' => 'out of range',
         ]);
 
-        $I->expectTo('see stats error');
+        $I->expect('stats error');
         $I->see('Status is invalid.');
 
         $I->submitForm('#supplier-form', [
@@ -73,7 +73,7 @@ class SupplierFormCest
             'Supplier[code]' => '',
         ]);
 
-        $I->expectTo('see name out of length');
+        $I->expect('name out of length error');
         $I->see('Name should contain at most 50 characters.', '.help-block');
 
         $I->submitForm('#supplier-form', [
@@ -81,7 +81,7 @@ class SupplierFormCest
             'Supplier[code]' => 'abcd',
         ]);
 
-        $I->expectTo('see code out of length');
+        $I->expect('code out of length error');
         $I->see('Code should contain at most 3 characters.', '.help-block');
     }
 
@@ -94,14 +94,14 @@ class SupplierFormCest
             'Supplier[t_status]' => 'ok',
         ]);
         $I->dontSeeElement('#supplier-form');
-        $I->expectTo('redirect to supplier index');
+        $I->expect('redirect to supplier index');
         $I->seeCurrentUrlEquals(Url::toRoute('supplier/index'));
     }
 
     public function incorrectExportParam(AcceptanceTester $I)
     {
         $I->amGoingTo('invalid export url');
-        $I->amOnPage(Url::to(['/supplier/export', 'SupplierSearch[export_ids]' => 'abc']));
+        $I->amOnPage(Url::to(['/supplier/export', 'SupplierForm[export_ids]' => 'abc']));
         $I->see('Bad Request');
         $I->see('Export Ids is invalid.');
     }

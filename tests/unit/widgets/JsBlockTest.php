@@ -48,4 +48,15 @@ DOC;
         $renderingResult = $widget->view->js[$widget->pos][md5($expected)];
         $this->assertEquals($renderingResult, $expected);
     }
+
+    public function testException()
+    {
+        try {
+            JsBlock::begin(['renderInPlace' => true]);
+            echo "<script>let a = 1;</script>";
+            $widget = JsBlock::end();
+        } catch (\Exception $e) {
+            $this->assertEquals($e->getMessage(), 'not implemented yet !');
+        }
+    }
 }

@@ -2,7 +2,7 @@
 
 namespace app\services;
 
-use app\models\SupplierSearch;
+use app\models\SupplierForm;
 use yii\data\ActiveDataProvider;
 
 class SupplierService
@@ -10,13 +10,13 @@ class SupplierService
     /**
      * Export db query to csv file.
      *
-     * @param \app\models\SupplierSearch $supplierModel
+     * @param \app\models\SupplierForm $supplierModel
      * @param \yii\data\ActiveDataProvider $dataProvider
      *
      * @return void
      * @throws \Throwable throw if db query fails
      */
-    public static function exportToCsv(SupplierSearch $supplierModel, ActiveDataProvider $dataProvider)
+    public static function exportToCsv(SupplierForm $supplierModel, ActiveDataProvider $dataProvider)
     {
         $columns = $supplierModel->export_columns;
         $labels = $supplierModel->attributeLabels();

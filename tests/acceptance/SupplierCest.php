@@ -10,11 +10,59 @@ use Facebook\WebDriver\Exception\ElementNotInteractableException;
 
 class SupplierCest
 {
+    // @var string
+    const SESSION_NAME = 'supplierAcceptanceSession';
+
+    // @var string
     protected $browserDownloadDir = '/tmp';
 
+    // @var string
     protected $filePattern = 'suppliers_*.csv';
 
-    const SESSION_NAME = 'supplierAcceptanceSession';
+    // @var array
+    protected $idInput = ['xpath' => '//input[@type="text" and @name="SupplierForm[id]"]'];
+
+    // @var array
+    protected $nameInput = ['xpath' => '//input[@type="text" and @name="SupplierForm[name]"]'];
+
+    // @var array
+    protected $codeInput = ['xpath' => '//input[@type="text" and @name="SupplierForm[code]"]'];
+
+    // @var array
+    protected $statusSelect = ['xpath' => '//select[@name="SupplierForm[t_status]"]'];
+
+    // @var array
+    protected $columnSelectionButton = ['id' => 'column-select-btn'];
+
+    // @var array
+    protected $columnSelectionButtonEnable = ['xpath' => '//button[@id="column-select-btn" and not(@disabled)]'];
+
+    // @var array
+    protected $columnSelectionButtonDisabled = ['xpath' => '//button[@id="column-select-btn" and @disabled]'];
+
+    // @var array
+    protected $paginationBlock = ['xpath' => '//ul[@class="pagination"]'];
+
+    // @var array
+    protected $summaryBlock = ['class' => 'summary'];
+
+    // @var array
+    protected $exportTip = ['id' => 'export-tip'];
+
+    // @var array
+    protected $exportTipLink = ['xpath' => '//span[@id="export-tip"]//a'];
+
+    // @var array
+    protected $exportModal = ['id' => 'export-modal'];
+
+    // @var array
+    protected $exportButton = ['id' => 'export-btn'];
+
+    // @var array
+    protected $firstRowCheckbox = ['xpath' => '//tbody[1]/tr[1]/td[1]/input[@type="checkbox"]'];
+
+    // @var array
+    protected $selectAllCheckbox = ['class' => 'select-on-check-all'];
 
     public function _before(\AcceptanceTester $I)
     {
@@ -31,15 +79,42 @@ class SupplierCest
         $I->amOnPage(Url::toRoute('/supplier/index'));
     }
 
-    protected function waitForSummaryChannge(AcceptanceTester $I, ?string $currentText)
-    {
-        $currentText = $currentText ?: $I->grabTextFrom(WebDriverBy::className('summary'));
-        $I->waitForJs("return typeof jQuery !== 'undefined' && $('.summary').text() !== '{$currentText}'", 10);
+    /**
+     * waiting for summary block text change
+     *
+     * @param \AcceptanceTester $I
+     * @param ?string $currentText
+     * @param ?string $expect
+     * @param int $timeout
+     *
+     * @return void
+     * @throws \Facebook\WebDriver\Exception\TimeoutException
+     */
+    protected function waitForSummaryChannge(
+        \AcceptanceTester $I,
+        ?string $currentText = null,
+        ?string $expect = null,
+        int $timeout = 10
+    ) {
+        $currentText = $currentText ?: $I->grabTextFrom($this->summaryBlock);
+        $I->waitForJs("return typeof jQuery !== 'undefined' && $('.summary').text() !== '{$currentText}'", $timeout);
+
+        if (null !== $expect) {
+            $I->see($expect, $this->summaryBlock);
+        }
     }
 
-    protected function waitForFileExists(int $wait = 10): array
+    /**
+     * waiting for file exists
+     *
+     * @param int $timeout
+     *
+     * @return array file list by `glob` search
+     * @throws \Facebook\WebDriver\Exception\TimeoutException
+     */
+    protected function waitForFileExists(int $timeout = 10): array
     {
-        $retry = $wait;
+        $retry = $timeout;
         $pattern = $this->browserDownloadDir . '/' . $this->filePattern;
 
         do {
@@ -56,10 +131,15 @@ class SupplierCest
             sleep(1);
         } while (--$retry);
 
-        throw new TimeoutException("Waited for {$wait} secs but path {$pattern} still not exists");
+        throw new TimeoutException("Waited for {$timeout} secs but path {$pattern} still not exists");
     }
 
-    protected function cleanDir()
+    /**
+     * clean download dir
+     *
+     * @return void
+     */
+    protected function cleanDownloadDir()
     {
         foreach (glob($this->browserDownloadDir . '/' . $this->filePattern) as $file) {
             if (is_file($file)) {
@@ -68,309 +148,366 @@ class SupplierCest
         }
     }
 
+    /**
+     * get string contains ignore case xpath expression
+     *
+     * @param string $path
+     * @param string $text
+     *
+     * @return \Facebook\WebDriver\WebDriverBy
+     */
     protected static function xpathContainsIgnoreCase(string $path, string $text): WebDriverBy
     {
         return WebDriverBy::xpath(sprintf(
-            '%s[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz"), "%s")]',
+            '%s[contains(translate(text(), "%s", "%s"), "%s")]',
             $path,
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz",
             $text
         ));
     }
 
-    public function supplierPageWorks(AcceptanceTester $I)
+    public function supplierPageWorks(\AcceptanceTester $I)
     {
         $I->wantTo('ensure that supplier page works');
+
         $I->see('Supplier', ['xpath' => '//h1']);
+        // current breadcrumb
         $I->see('Supplier', ['xpath' => '//li[contains(@class, "breadcrumb-item") and contains(@class, "active")]']);
 
-        $I->expectTo('create and export button');
+        $I->expect('create and export button');
         $I->seeLink('Create Supplier', Url::toRoute('/supplier/create'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and @disabled]'));
+        $I->seeElement($this->columnSelectionButtonDisabled);
 
-        $I->expectTo('items summary');
-        $I->see('Showing 1-20 of', ['class' => 'summary']);
+        $I->expect('items summary');
+        $I->see('Showing 1-20 of', $this->summaryBlock);
 
-        $I->expectTo('sort by field link');
+        $I->expect('sort by field link');
         $I->seeLink('ID');
         $I->seeLink('Name');
         $I->seeLink('Code');
         $I->seeLink('Status');
 
-        $I->expectTo('pagination block');
-        $I->seeElement(WebDriverBy::xpath('//ul[@class="pagination"]'));
+        $I->expect('pagination block');
+        $I->seeElement($this->paginationBlock);
         $I->seeLink('10', Url::toRoute(['/supplier/index', 'page' => 10]));
         $I->seeLink('>', Url::toRoute(['/supplier/index', 'page' => 2]));
         $I->seeLink('>>', Url::toRoute(['/supplier/index', 'page' => 250]));
 
-        $I->expectTo('click page 2');
+        $I->amGoingTo('click page 2');
         $I->click('2');
-        $I->waitForText('Showing 21-40 of', 10, WebDriverBy::className('summary'));
+        $I->waitForText('Showing 21-40 of', 10, $this->summaryBlock);
     }
 
-    public function searchByIdEquals(AcceptanceTester $I)
+    public function searchByIdEquals(\AcceptanceTester $I)
     {
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
         $I->wantTo('filter by id=20');
-        $I->pressKey(WebDriverBy::xpath('//input[@type="text" and @name="SupplierSearch[id]"]'), '20', WebDriverKeys::ENTER);
-        $this->waitForSummaryChannge($I, $summaryText);
-        $I->see('Showing 1-1 of 1 item.', ['class' => 'summary']);
-        $I->dontSeeElement(WebDriverBy::xpath('//ul[@class="pagination"]'));
+
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->pressKey($this->idInput, '20', WebDriverKeys::ENTER);
+        $this->waitForSummaryChannge($I, $summaryText, 'Showing 1-1 of 1 item.');
+        $I->dontSeeElement($this->paginationBlock);
     }
 
-    public function searchByIdGreaterThan(AcceptanceTester $I)
+    public function searchByIdGreaterThan(\AcceptanceTester $I)
     {
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
-        $I->wantTo('filter by id>=20');
-        $I->pressKey(WebDriverBy::xpath('//input[@type="text" and @name="SupplierSearch[id]"]'), '>=20', WebDriverKeys::ENTER);
-        $this->waitForSummaryChannge($I, $summaryText);
-        $I->see('Showing 1-20 of', ['class' => 'summary']);
-        $I->seeElement(WebDriverBy::xpath('//ul[@class="pagination"]'));
+        $I->wantTo('filter by id>20');
+
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->pressKey($this->idInput, '>20', WebDriverKeys::ENTER);
+        $this->waitForSummaryChannge($I, $summaryText, 'Showing 1-20 of');
+        $I->seeElement($this->paginationBlock);
     }
 
-    public function searchByIdLessThan(AcceptanceTester $I)
+    public function searchByIdLessThanAndEquals(\AcceptanceTester $I)
     {
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
         $I->wantTo('filter by id<=10');
-        $I->pressKey(WebDriverBy::xpath('//input[@type="text" and @name="SupplierSearch[id]"]'), '<=10', WebDriverKeys::ENTER);
-        $this->waitForSummaryChannge($I, $summaryText);
-        $I->see('Showing 1-10 of 10 items.', ['class' => 'summary']);
-        $I->dontSeeElement(WebDriverBy::xpath('//ul[@class="pagination"]'));
+
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->pressKey($this->idInput, '<=10', WebDriverKeys::ENTER);
+        $this->waitForSummaryChannge($I, $summaryText, 'Showing 1-10 of 10 items.');
+        $I->dontSeeElement($this->paginationBlock);
     }
 
-    public function searchByName(AcceptanceTester $I)
+    public function searchByName(\AcceptanceTester $I)
     {
-        $I->wantTo('grab current .summary text');
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
-        $selector = WebDriverBy::xpath('//input[@type="text" and @name="SupplierSearch[name]"]');
-
         $I->wantTo('filter by name like %ben%');
-        $I->pressKey($selector, 'ben', WebDriverKeys::ENTER);
+
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->pressKey($this->nameInput, 'ben', WebDriverKeys::ENTER);
         $this->waitForSummaryChannge($I, $summaryText);
         $I->seeElement(self::xpathContainsIgnoreCase('//tbody[1]/tr[1]/td[3]', 'ben'));
     }
 
-    public function searchByCode(AcceptanceTester $I)
+    public function searchByCode(\AcceptanceTester $I)
     {
         $I->wantTo('filter by name like %be%');
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
-        $selector = WebDriverBy::xpath('//input[@type="text" and @name="SupplierSearch[code]"]');
 
-        $I->pressKey($selector, 'be', WebDriverKeys::ENTER);
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->pressKey($this->codeInput, 'be', WebDriverKeys::ENTER);
         $this->waitForSummaryChannge($I, $summaryText);
         $I->seeElement(self::xpathContainsIgnoreCase('//tbody[1]/tr[1]/td[4]', 'be'));
     }
 
-    public function searchByStatus(AcceptanceTester $I)
+    public function searchByStatus(\AcceptanceTester $I)
     {
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
+        $I->wantToTest('filter by OK status then filter All status');
+
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->expect('dropdown default All status');
         $I->seeElement(WebDriverBy::xpath('//option[@value="" and text()="All"]'));
 
-        $I->wantTo('filter by OK status');
-        $selector = WebDriverBy::xpath('//select[@name="SupplierSearch[t_status]"]');
-        $I->selectOption($selector, 'OK');
+        $I->expectTo('filter by OK status');
+        $I->selectOption($this->statusSelect, 'OK');
         $this->waitForSummaryChannge($I, $summaryText);
+
+        $I->expect('dropdown status is OK now');
         $I->seeElement(WebDriverBy::xpath('//tbody[1]/tr[1]/td[5][text()="OK"]'));
+        $I->expect('only ok status');
         $I->dontSeeElement(WebDriverBy::xpath('//tbody/tr/td[5][text()!="OK"]'));
 
-        $I->wantTo('filter by All status');
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
+        $I->expectTo('filter by All status');
 
-        $I->selectOption($selector, '');
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->selectOption($this->statusSelect, '');
         $this->waitForSummaryChannge($I, $summaryText);
+
+        $I->expect('ok and hold status');
         $I->seeElement(WebDriverBy::xpath('//tbody[1]/tr/td[5][text()="OK"]'));
         $I->seeElement(WebDriverBy::xpath('//tbody[1]/tr/td[5][text()="Hold"]'));
     }
 
-    public function searchByMultipleFilter(AcceptanceTester $I)
+    public function searchByMultipleFilter(\AcceptanceTester $I)
     {
-        $I->wantTo('filter by id>=20');
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
-        $I->pressKey(WebDriverBy::xpath('//input[@type="text" and @name="SupplierSearch[id]"]'), '>=20', WebDriverKeys::ENTER);
-        $this->waitForSummaryChannge($I, $summaryText);
-        $I->seeElement(WebDriverBy::xpath('//tbody[1]/tr[1]/td[2][text()>=20]'));
+        $I->wantToTest('filter by id>=20 and name like %ben% and OK status');
 
-        $I->wantTo('filter by name like %ben%');
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
-        $I->pressKey(WebDriverBy::xpath('//input[@type="text" and @name="SupplierSearch[name]"]'), 'ben', WebDriverKeys::ENTER);
-        $this->waitForSummaryChannge($I, $summaryText);
-        $I->seeElement(WebDriverBy::xpath('//tbody[1]/tr[1]/td[2][text()>=20]'));
-        $I->seeElement(self::xpathContainsIgnoreCase('//tbody[1]/tr[1]/td[3]', 'ben'));
+        $idGe20 = WebDriverBy::xpath('//tbody[1]/tr[1]/td[2][text()>=20]');
+        $nameLikeBen = self::xpathContainsIgnoreCase('//tbody[1]/tr[1]/td[3]', 'ben');
 
-        $I->wantTo('filter by OK status');
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
-        $selector = WebDriverBy::xpath('//select[@name="SupplierSearch[t_status]"]');
-        $I->selectOption(WebDriverBy::xpath('//select[@name="SupplierSearch[t_status]"]'), 'OK');
+        $I->expectTo('filter by id>=20');
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->pressKey($this->idInput, '>=20', WebDriverKeys::ENTER);
+
         $this->waitForSummaryChannge($I, $summaryText);
-        $I->seeElement(WebDriverBy::xpath('//tbody[1]/tr[1]/td[2][text()>=20]'));
-        $I->seeElement(self::xpathContainsIgnoreCase('//tbody[1]/tr[1]/td[3]', 'ben'));
+        $I->seeElement($idGe20);
+
+        $I->expectTo('filter by name like %ben%');
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->pressKey($this->nameInput, 'ben', WebDriverKeys::ENTER);
+
+        $this->waitForSummaryChannge($I, $summaryText);
+        $I->seeElement($idGe20);
+        $I->seeElement($nameLikeBen);
+
+        $I->expectTo('filter by OK status');
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->selectOption($this->statusSelect, 'OK');
+
+        $this->waitForSummaryChannge($I, $summaryText);
+        $I->seeElement($idGe20);
+        $I->seeElement($nameLikeBen);
+
+        $I->expect('only ok status');
         $I->seeElement(WebDriverBy::xpath('//tbody[1]/tr[1]/td[5][text()="OK"]'));
         $I->dontSeeElement(WebDriverBy::xpath('//tbody/tr/td[5][text()!="OK"]'));
     }
 
-    public function checkFirstCheckbox(AcceptanceTester $I)
+    public function checkFirstCheckbox(\AcceptanceTester $I)
     {
-        $I->wantTo('click first row checkbox');
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and @disabled]'));
-        $I->checkOption(WebDriverBy::xpath('(//input[@name="selection[]"])[1]'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and not(@disabled)]'));
+        $I->wantToTest('click 1st record then uncheck it');
 
-        $I->wantTo('uncheck first row checkbox');
-        $I->uncheckOption(WebDriverBy::xpath('(//input[@name="selection[]"])[1]'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and @disabled]'));
+        $firstCheckbox = WebDriverBy::xpath('(//input[@name="selection[]"])[1]');
+
+        $I->seeElement($this->columnSelectionButtonDisabled);
+        $I->checkOption($firstCheckbox);
+        $I->seeElement($this->columnSelectionButtonEnable);
+
+        $I->uncheckOption($firstCheckbox);
+        $I->seeElement($this->columnSelectionButtonDisabled);
     }
 
-    public function selectAllTip(AcceptanceTester $I)
+    public function selectAllTip(\AcceptanceTester $I)
     {
-        $I->wantTo('select all');
-        $I->checkOption(WebDriverBy::className('select-on-check-all'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and not(@disabled)]'));
-        $I->see('Select all suppliers that match this search', ['id' => 'export-tip']);
+        $I->wantToTest(
+            'select all in current page then select all records whose match this search, last clear selection.'
+        );
 
-        $I->wantTo('select all match this search');
-        $I->click(WebDriverBy::xpath('//span[@id="export-tip"]//a'));
-        $I->see('Clear selection', ['id' => 'export-tip']);
+        $I->expectTo('select all in current page');
+        $I->checkOption($this->selectAllCheckbox);
+        $I->seeElement($this->columnSelectionButtonEnable);
+        $I->see('Select all suppliers that match this search', $this->exportTip);
 
-        $I->wantTo('clear selection');
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and not(@disabled)]'));
-        $I->seeCheckboxIsChecked(WebDriverBy::className('select-on-check-all'));
-        $I->seeCheckboxIsChecked(WebDriverBy::name('selection[]'));
-        $I->click(WebDriverBy::xpath('//span[@id="export-tip"]//a'));
+        $I->expectTo('select all match this search');
+        $I->click($this->exportTipLink);
+        $I->see('Clear selection', $this->exportTip);
 
-        $I->expectTo('export button disabled, all checkbox uncheck');
-        $I->dontSeeCheckboxIsChecked(WebDriverBy::className('select-on-check-all'));
-        $I->dontSeeCheckboxIsChecked(WebDriverBy::name('selection[]'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and @disabled]'));
+        $checkbox = WebDriverBy::name('selection[]');
+        $I->expectTo('clear selection');
+        $I->seeElement($this->columnSelectionButtonEnable);
+        $I->seeCheckboxIsChecked($this->selectAllCheckbox);
+        $I->seeCheckboxIsChecked($checkbox);
+        $I->click($this->exportTipLink);
+
+        $I->expect('export button disabled, all checkbox uncheck');
+        $I->dontSeeCheckboxIsChecked($this->selectAllCheckbox);
+        $I->dontSeeCheckboxIsChecked($checkbox);
+        $I->seeElement($this->columnSelectionButtonDisabled);
     }
 
-    public function checkAllCheckBoxWithoutUseCheckAll(AcceptanceTester $I)
+    public function checkAllCheckBoxWithoutUseCheckAll(\AcceptanceTester $I)
     {
         $I->wantTo('check all checkbox without use check-all checkbox');
+
         for ($i = 1; $i <= 20; $i++) {
             $I->checkOption(WebDriverBy::xpath("(//input[@name='selection[]'])[$i]"));
         }
 
-        $I->expectTo('check-all checkbox checked');
+        $I->expect('check-all checkbox checked');
+        $I->seeCheckboxIsChecked($this->selectAllCheckbox);
         $I->seeCheckboxIsChecked(WebDriverBy::name('selection[]'));
-        $I->seeCheckboxIsChecked(WebDriverBy::className('select-on-check-all'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and not(@disabled)]'));
-        $I->see('Select all suppliers that match this search', ['id' => 'export-tip']);
+        $I->seeElement($this->columnSelectionButtonEnable);
+        $I->see('Select all suppliers that match this search', $this->exportTip);
     }
 
-    public function clickExportButtonToSelectExportColumns(AcceptanceTester $I)
+    public function clickExportButtonToSelectExportColumns(\AcceptanceTester $I)
     {
-        $I->wantTo('click export button');
-        $I->dontSeeElement(WebDriverBy::id('export-modal'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and @disabled]'));
-        $I->checkOption(WebDriverBy::xpath('//tbody[1]/tr[1]/td[1]/input[@type="checkbox"]'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and not(@disabled)]'));
-        $I->waitForElementClickable(WebDriverBy::id('column-select-btn'));
-        $I->click(WebDriverBy::id('column-select-btn'));
+        $I->wantToTest('export columns selection modal');
 
-        $I->expectTo('columns select modal showed');
+        $I->dontSeeElement($this->exportModal);
+        $I->seeElement($this->columnSelectionButtonDisabled);
+
+        $I->checkOption($this->firstRowCheckbox);
+        $I->seeElement($this->columnSelectionButtonEnable);
+        $I->waitForElementClickable($this->columnSelectionButton);
+        $I->click($this->columnSelectionButton);
+
+        $columnID = WebDriverBy::id('column-id');
+        $columnName = WebDriverBy::id('column-name');
+        $columnCode = WebDriverBy::id('column-code');
+        $columnStatus = WebDriverBy::id('column-t_status');
+
+        $I->expect('columns select modal showed');
         $I->see('Select export columns', ['xpath' => '//h5']);
-        $I->seeElement(WebDriverBy::id('export-modal'));
-        $I->seeCheckboxIsChecked(WebDriverBy::id('column-id'));
-        $I->seeCheckboxIsChecked(WebDriverBy::id('column-name'));
-        $I->seeCheckboxIsChecked(WebDriverBy::id('column-code'));
-        $I->seeCheckboxIsChecked(WebDriverBy::id('column-t_status'));
+        $I->seeElement($this->exportModal);
+        $I->seeCheckboxIsChecked($columnID);
+        $I->seeCheckboxIsChecked($columnName);
+        $I->seeCheckboxIsChecked($columnCode);
+        $I->seeCheckboxIsChecked($columnStatus);
 
-        $I->uncheckOption(WebDriverBy::id('column-name'));
-        $I->dontSeeCheckboxIsChecked(WebDriverBy::id('column-name'));
+        $I->uncheckOption($columnName);
+        $I->dontSeeCheckboxIsChecked($columnName);
 
-        $I->wantTo('close modal');
+        $I->expectTo('close modal');
+        // modal close button
         $I->click(WebDriverBy::xpath('//div[@id="export-modal"]//button[@class="close"]'));
         $I->dontSee('Select export columns', ['xpath' => '//h5']);
-        $I->dontSeeElement(WebDriverBy::id('export-modal'));
+        $I->dontSeeElement($this->exportModal);
         $I->wait(1);
 
-        $I->wantTo('reopen modal');
-        $I->waitForElementClickable(WebDriverBy::id('column-select-btn'));
-        $I->click(WebDriverBy::id('column-select-btn'));
+        $I->expectTo('reopen modal');
+        $I->waitForElementClickable($this->columnSelectionButton);
+        $I->click($this->columnSelectionButton);
 
-        $I->expectTo('all checkbox checked when modal reopen');
+        $I->expect('all checkbox checked when modal showed');
         $I->see('Select export columns', ['xpath' => '//h5']);
-        $I->seeElement(WebDriverBy::id('export-modal'));
-        $I->seeCheckboxIsChecked(WebDriverBy::id('column-id'));
-        $I->seeCheckboxIsChecked(WebDriverBy::id('column-name'));
-        $I->seeCheckboxIsChecked(WebDriverBy::id('column-code'));
-        $I->seeCheckboxIsChecked(WebDriverBy::id('column-t_status'));
+        $I->seeElement($this->exportModal);
+        $I->seeCheckboxIsChecked($columnID);
+        $I->seeCheckboxIsChecked($columnName);
+        $I->seeCheckboxIsChecked($columnCode);
+        $I->seeCheckboxIsChecked($columnStatus);
     }
 
-    public function exportOneRecordToCsv(AcceptanceTester $I)
+    public function exportOneRecordToCsv(\AcceptanceTester $I)
     {
-        $this->cleanDir();
+        $I->wantTo('export 1st record to csv');
 
-        $I->wantTo('export 1 row to csv');
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and @disabled]'));
-        $I->checkOption(WebDriverBy::xpath('//tbody[1]/tr[1]/td[1]/input[@type="checkbox"]'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and not(@disabled)]'));
-        $I->waitForElementClickable(WebDriverBy::id('column-select-btn'));
-        $I->click(WebDriverBy::id('column-select-btn'));
+        $this->cleanDownloadDir();
 
-        $I->waitForElementClickable(WebDriverBy::id('export-btn'));
-        $I->click(WebDriverBy::id('export-btn'));
+        $I->seeElement($this->columnSelectionButtonDisabled);
+        $I->checkOption($this->firstRowCheckbox);
+        $I->seeElement($this->columnSelectionButtonEnable);
+        $I->waitForElementClickable($this->columnSelectionButton);
+        $I->click($this->columnSelectionButton);
 
-        $I->expectTo('csv file');
+        $I->waitForElementClickable($this->exportButton);
+        $I->click($this->exportButton);
+
+        $I->expect('downloading csv file');
         $files = $this->waitForFileExists();
-        $I->openFile(array_pop($files));
+        $csvFile = array_pop($files);
+
+        $I->openFile($csvFile);
         $I->seeInThisFile("ID,Name,Code,Status\n");
         $I->seeNumberNewLines(3);
         $I->deleteThisFile();
     }
 
-    public function exportCurrentPageAllRecordsWithoutCodeColumnToCsv(AcceptanceTester $I)
+    public function exportCurrentPageAllRecordsWithoutCodeColumnToCsv(\AcceptanceTester $I)
     {
-        $this->cleanDir();
+        $I->wantToTest('export all records in current page without Code column');
 
-        $I->wantTo('select all records in current page');
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and @disabled]'));
-        $I->checkOption(WebDriverBy::className('select-on-check-all'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and not(@disabled)]'));
+        $this->cleanDownloadDir();
 
-        $I->wantTo('uncheck code column in export');
-        $I->waitForElementClickable(WebDriverBy::id('column-select-btn'));
-        $I->click(WebDriverBy::id('column-select-btn'));
+        $I->seeElement($this->columnSelectionButtonDisabled);
+        $I->checkOption($this->selectAllCheckbox);
+        $I->seeElement($this->columnSelectionButtonEnable);
+
+        $I->expectTo('uncheck code column in modal');
+        $I->waitForElementClickable($this->columnSelectionButton);
+        $I->click($this->columnSelectionButton);
+
         $I->see('Select export columns', ['xpath' => '//h5']);
-        $I->seeElement(WebDriverBy::id('export-modal'));
-        $I->uncheckOption(WebDriverBy::id('column-code'));
-        $I->waitForElementClickable(WebDriverBy::id('export-btn'));
-        $I->click(WebDriverBy::id('export-btn'));
+        $I->seeElement($this->exportModal);
 
+        $I->uncheckOption(WebDriverBy::id('column-code'));
+        $I->waitForElementClickable($this->exportButton);
+        $I->click($this->exportButton);
+
+        $I->expect('downloading csv file');
         $files = $this->waitForFileExists();
-        $I->openFile(array_pop($files));
+        $csvFile = array_pop($files);
+
+        $I->openFile($csvFile);
         $I->seeInThisFile("ID,Name,Status\n");
         $I->seeNumberNewLines(22);
         $I->deleteThisFile();
     }
 
-    public function exportAllRecordsWithFilterToCsv(AcceptanceTester $I)
+    public function exportAllRecordsWithFilterToCsv(\AcceptanceTester $I)
     {
-        $this->cleanDir();
+        $I->wantToTest('export all records whose match id<=30');
 
-        $I->wantTo('filter by id <= 30');
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and @disabled]'));
+        $this->cleanDownloadDir();
 
-        $summaryText = $I->grabTextFrom(WebDriverBy::className('summary'));
-        $I->pressKey(WebDriverBy::xpath('//input[@type="text" and @name="SupplierSearch[id]"]'), '<=30', WebDriverKeys::ENTER);
+        $summaryText = $I->grabTextFrom($this->summaryBlock);
+        $I->seeElement($this->columnSelectionButtonDisabled);
+        $I->pressKey($this->idInput, '<=30', WebDriverKeys::ENTER);
         $this->waitForSummaryChannge($I, $summaryText);
-        $I->seeElement(WebDriverBy::xpath('//ul[@class="pagination"]'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and @disabled]'));
 
-        $I->wantTo('select all records');
-        $I->checkOption(WebDriverBy::className('select-on-check-all'));
-        $I->seeElement(WebDriverBy::xpath('//button[@id="column-select-btn" and not(@disabled)]'));
-        $I->see('Select all suppliers that match this search', ['id' => 'export-tip']);
-        $I->click(WebDriverBy::xpath('//span[@id="export-tip"]//a'));
+        $I->seeElement($this->paginationBlock);
+        $I->seeElement($this->columnSelectionButtonDisabled);
 
-        $I->waitForElementClickable(WebDriverBy::id('column-select-btn'));
-        $I->click(WebDriverBy::id('column-select-btn'));
+        $I->expectTo('select all records in current page');
+        $I->checkOption($this->selectAllCheckbox);
+        $I->seeElement($this->columnSelectionButtonEnable);
+
+        $I->expectTo('select all match search');
+        $I->see('Select all suppliers that match this search', $this->exportTip);
+        $I->click($this->exportTipLink);
+
+        $I->waitForElementClickable($this->columnSelectionButton);
+        $I->click($this->columnSelectionButton);
+
         $I->see('Select export columns', ['xpath' => '//h5']);
-        $I->seeElement(WebDriverBy::id('export-modal'));
-        $I->waitForElementClickable(WebDriverBy::id('export-btn'));
-        $I->click(WebDriverBy::id('export-btn'));
+        $I->seeElement($this->exportModal);
+        $I->waitForElementClickable($this->exportButton);
+        $I->click($this->exportButton);
 
+        $I->expect('downloading csv file');
         $files = $this->waitForFileExists();
-        $I->openFile(array_pop($files));
+        $csvFile = array_pop($files);
+
+        $I->openFile($csvFile);
         $I->seeInThisFile("ID,Name,Code,Status\n");
         $I->seeNumberNewLines(32);
         $I->deleteThisFile();

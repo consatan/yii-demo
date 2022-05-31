@@ -8,7 +8,7 @@ use yii\widgets\Pjax;
 use yii\bootstrap4\Modal;
 use app\models\Supplier;
 /* @var $this yii\web\View */
-/* @var $searchModel app\models\SupplierSearch */
+/* @var $searchModel app\models\SupplierForm */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
 $this->title = Yii::t('app', 'Suppliers');
@@ -136,13 +136,13 @@ jQuery(function($) {
       $('#supplier-grid [name="selection[]"]:checked').each(function(i, item) {
         ids.push(item.value);
       });
-      url += 'SupplierSearch[export_ids]=' + ids.join();
+      url += 'SupplierForm[export_ids]=' + ids.join();
     } else {
       url += window.location.search.slice(1).replace(indexUrl.slice(sliceIndex + 1), '');
     }
 
     exportModal.find('input[type="checkbox"]:checked').each(function(i, item) {
-      url += '&SupplierSearch[export_columns][]=' + item.value;
+      url += '&SupplierForm[export_columns][]=' + item.value;
     });
 
     window.open(url, '_blank');

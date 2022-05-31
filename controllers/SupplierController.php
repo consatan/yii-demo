@@ -3,7 +3,7 @@
 namespace app\controllers;
 
 use app\models\Supplier;
-use app\models\SupplierSearch;
+use app\models\SupplierForm;
 use app\services\SupplierService;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -46,7 +46,7 @@ class SupplierController extends Controller
      */
     public function actionIndex()
     {
-        $searchModel = new SupplierSearch(['scenario' => SupplierSearch::SCENARIO_SEARCH]);
+        $searchModel = new SupplierForm(['scenario' => SupplierForm::SCENARIO_SEARCH]);
         $dataProvider = $searchModel->search($this->request->queryParams);
 
         return $this->render('index', [
@@ -86,7 +86,7 @@ class SupplierController extends Controller
      */
     public function actionExport()
     {
-        $searchModel = new SupplierSearch(['scenario' => SupplierSearch::SCENARIO_EXPORT]);
+        $searchModel = new SupplierForm(['scenario' => SupplierForm::SCENARIO_EXPORT]);
         $dataProvider = $searchModel->export($this->request->queryParams);
         if ($searchModel->hasErrors()) {
             throw new BadRequestHttpException(VarDumper::export($searchModel->getErrors()));

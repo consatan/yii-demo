@@ -3,19 +3,19 @@
 namespace tests\unit\models;
 
 use app\models\Supplier;
-use app\models\SupplierSearch;
+use app\models\SupplierForm;
 use yii\db\ActiveQuery;
 use yii\data\ActiveDataProvider;
 
-class SupplierSearchTest extends \Codeception\Test\Unit
+class SupplierFormTest extends \Codeception\Test\Unit
 {
     /**
      * @dataProvider searchDataProvider
      */
     public function testSearch(array $params, array $expected)
     {
-        $model = new SupplierSearch();
-        $dataProvider = $model->search(['SupplierSearch' => $params]);
+        $model = new SupplierForm();
+        $dataProvider = $model->search(['SupplierForm' => $params]);
 
         $this->assertFalse($model->hasErrors());
         $this->assertInstanceOf(ActiveDataProvider::class, $dataProvider);
@@ -61,8 +61,8 @@ class SupplierSearchTest extends \Codeception\Test\Unit
      */
     public function testSearchValidationFail(array $params, array $expected)
     {
-        $model = new SupplierSearch();
-        $dataProvider = $model->search(['SupplierSearch' => $params]);
+        $model = new SupplierForm();
+        $dataProvider = $model->search(['SupplierForm' => $params]);
 
         $this->assertTrue($model->hasErrors());
         $this->assertInstanceOf(ActiveDataProvider::class, $dataProvider);
@@ -113,8 +113,8 @@ class SupplierSearchTest extends \Codeception\Test\Unit
      */
     public function testExport(array $params, ?array $expected, array $expectedColumns = ['id'])
     {
-        $model = new SupplierSearch(['scenario' => SupplierSearch::SCENARIO_EXPORT]);
-        $dataProvider = $model->export(['SupplierSearch' => $params]);
+        $model = new SupplierForm(['scenario' => SupplierForm::SCENARIO_EXPORT]);
+        $dataProvider = $model->export(['SupplierForm' => $params]);
 
         $this->assertFalse($model->hasErrors());
         $this->assertInstanceOf(ActiveDataProvider::class, $dataProvider);
@@ -158,8 +158,8 @@ class SupplierSearchTest extends \Codeception\Test\Unit
      */
     public function testExportValidationFail(array $params, array $expected)
     {
-        $model = new SupplierSearch(['scenario' => SupplierSearch::SCENARIO_EXPORT]);
-        $dataProvider = $model->export(['SupplierSearch' => $params]);
+        $model = new SupplierForm(['scenario' => SupplierForm::SCENARIO_EXPORT]);
+        $dataProvider = $model->export(['SupplierForm' => $params]);
 
         $this->assertTrue($model->hasErrors());
         $this->assertInstanceOf(ActiveDataProvider::class, $dataProvider);
@@ -199,7 +199,7 @@ class SupplierSearchTest extends \Codeception\Test\Unit
 
     public function testGetAttributeLabels()
     {
-        $model = new SupplierSearch();
+        $model = new SupplierForm();
         $labels = $model->attributeLabels();
 
         $this->assertEquals([

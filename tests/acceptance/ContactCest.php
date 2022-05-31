@@ -5,6 +5,7 @@ use \Facebook\WebDriver\WebDriverBy;
 
 class ContactCest
 {
+    // @var string
     const SESSION_NAME = 'contactAcceptanceSeesion';
 
     public function _before(\AcceptanceTester $I)

@@ -2,7 +2,7 @@
 
 namespace tests\unit\services;
 
-use app\models\SupplierSearch;
+use app\models\SupplierForm;
 use app\services\SupplierService;
 use yii\db\ActiveQuery;
 use yii\data\ActiveDataProvider;
@@ -14,7 +14,7 @@ class SupplierServiceTest extends \Codeception\Test\Unit
      */
     public function testExportToCsv(array $columns, array $data, string $output)
     {
-        $model = new SupplierSearch(['export_columns' => $columns]);
+        $model = new SupplierForm(['export_columns' => $columns]);
         $dataProvider = new ActiveDataProvider([
             'query' => $this->make(ActiveQuery::class, [
                 'each' => function () use ($data) {
@@ -72,7 +72,7 @@ class SupplierServiceTest extends \Codeception\Test\Unit
 
     public function testQueryFail()
     {
-        $model = new SupplierSearch(['export_columns' => ['id']]);
+        $model = new SupplierForm(['export_columns' => ['id']]);
         $dataProvider = new ActiveDataProvider([
             'query' => $this->make(ActiveQuery::class, [
                 'each' => function () {

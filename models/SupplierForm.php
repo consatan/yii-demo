@@ -7,9 +7,9 @@ use yii\data\ActiveDataProvider;
 use app\models\Supplier;
 
 /**
- * SupplierSearch represents the model behind the search form of `app\models\Supplier`.
+ * SupplierForm represents the model behind the search form of `app\models\Supplier`.
  */
-class SupplierSearch extends Supplier
+class SupplierForm extends Supplier
 {
     // @var string export scenario
     const SCENARIO_EXPORT = 'export';

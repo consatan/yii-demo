@@ -26,9 +26,9 @@ class JsBlock extends Block
     {
         $block = ob_get_clean();
         if ($this->renderInPlace) {
-           throw new \Exception("not implemented yet ! ");
-           // echo $block;
+           throw new \Exception('not implemented yet !');
         }
+
         $block = trim($block);
 
         $jsBlockPattern  = '|^<script[^>]*>(?P<block_content>.+?)</script>$|is';
