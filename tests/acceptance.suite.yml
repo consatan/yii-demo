@@ -11,6 +11,7 @@ modules:
                   browser.download.folderList: 2
                   browser.download.dir: "/tmp/"
                   browser.helperApps.alwaysAsk.force: false
+                  network.proxy.allow_hijacking_localhost: true
         - Yii2:
             part: orm
             entryScript: index-test.php
