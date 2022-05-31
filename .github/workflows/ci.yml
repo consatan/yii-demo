@@ -45,6 +45,9 @@ jobs:
     - name: Copy c3 to web root
       run: cp -f vendor/codeception/c3/c3.php web/c3.php
 
+    - name: Migration test database
+      run: yes | php tests/bin/yii migrate
+
     - name: Run test server
       run: nohup php tests/bin/yii serve &
 
