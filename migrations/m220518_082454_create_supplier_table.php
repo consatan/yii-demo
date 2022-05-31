@@ -40,13 +40,15 @@ class m220518_082454_create_supplier_table extends Migration
         // ```
         //
         // or load exists faker data
-        // $path = __DIR__ . '/../tests/unit/fixtures/data/supplier.php';
-        // if (is_readable($path)) {
-        //     $fixtures = require $path;
-        //     foreach (array_chunk($fixtures, 1000) as $rows) {
-        //         $this->batchInsert('{{%supplier}}', ['name', 'code', 't_status'], $rows);
-        //     }
-        // }
+        if (YII_ENV === 'test') {
+            $path = __DIR__ . '/../tests/unit/fixtures/data/supplier.php';
+            if (is_readable($path)) {
+                $fixtures = require $path;
+                foreach (array_chunk($fixtures, 1000) as $rows) {
+                    $this->batchInsert('{{%supplier}}', ['name', 'code', 't_status'], $rows);
+                }
+            }
+        }
     }
 
     /**
