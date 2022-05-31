@@ -20,7 +20,7 @@ jobs:
 
     steps:
     - name: Start selenium server with Docker
-      run: docker run -d -p 4444:4444 --shm-size="2g" selenium/standalone-firefox
+      run: docker run -d --net=host --shm-size="2g" selenium/standalone-firefox
 
     - uses: actions/checkout@v3
 
