@@ -19,11 +19,8 @@ jobs:
         php: ['7.2', '7.3', '7.4', '8.0', '8.1']
 
     steps:
-    - name: Start selenoid
-      uses: Xotabu4/selenoid-github-action@v2
-      with:
-        selenoid-start-arguments: |
-          --args "--browsers firefox"
+    - name: Start selenium server with Docker
+      run: docker run -d -p 4444:4444 --shm-size="2g" selenium/standalone-firefox
 
     - uses: actions/checkout@v3
 
