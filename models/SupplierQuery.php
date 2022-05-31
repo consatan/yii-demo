@@ -17,6 +17,7 @@ class SupplierQuery extends \yii\db\ActiveQuery
     /**
      * {@inheritdoc}
      * @return Supplier[]|array
+     * @codeCoverageIgnore
      */
     public function all($db = null)
     {
@@ -26,6 +27,7 @@ class SupplierQuery extends \yii\db\ActiveQuery
     /**
      * {@inheritdoc}
      * @return Supplier|array|null
+     * @codeCoverageIgnore
      */
     public function one($db = null)
     {

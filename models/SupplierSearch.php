@@ -15,7 +15,7 @@ class SupplierSearch extends Supplier
     const SCENARIO_EXPORT = 'export';
 
     // @var string search scenario
-    const SCENARIO_SEARCH = 'search';
+    const SCENARIO_SEARCH = 'default';
 
     // @var int|string
     public $id;
@@ -39,6 +39,7 @@ class SupplierSearch extends Supplier
     public function rules()
     {
         return [
+            [['id', 'code', 'name', 't_status', 'export_ids', 'export_columns'], 'trim'],
             ['id', 'match', 'pattern' => '/^(=|[><]=?)?\s*(\d+)$/'],
             ['code', 'string', 'length' => [1, 3]],
             ['name', 'string', 'length' => [1, 50]],
@@ -46,23 +47,6 @@ class SupplierSearch extends Supplier
             ['export_ids', 'match', 'pattern' => '/^(\d+,)*\d+$/', 'on' => self::SCENARIO_EXPORT],
             ['export_columns', 'default', 'value' => ['id'], 'on' => self::SCENARIO_EXPORT],
             ['export_columns', 'in', 'range' => $this->attributes(), 'allowArray' => true, 'on' => self::SCENARIO_EXPORT],
-        ];
-    }
-
-    /** {@inheritdoc} */
-    public function attributeLabels()
-    {
-        $labels = parent::attributeLabels();
-        $labels['t_status'] = 'Status';
-        return $labels;
-    }
-
-    /** {@inheritdoc} */
-    public function scenarios()
-    {
-        return [
-            self::SCENARIO_EXPORT => ['id', 'name', 'code', 't_status', 'export_ids', 'export_columns'],
-            self::SCENARIO_SEARCH => ['id', 'name', 'code', 't_status'],
         ];
     }
 
@@ -83,15 +67,8 @@ class SupplierSearch extends Supplier
             return $dataProvider;
         }
 
-        if ($this->id) {
-            if (is_numeric($this->id)) {
-                $dataProvider->query->andFilterWhere(['id' => $this->id]);
-            } else {
-                $dataProvider->query->andFilterCompare('id', $this->id);
-            }
-        }
-
-        $dataProvider->query->andFilterWhere(['like', 'name', $this->name])
+        $dataProvider->query->andFilterCompare('id', $this->id)
+            ->andFilterWhere(['like', 'name', $this->name])
             ->andFilterWhere(['like', 'code', $this->code])
             ->andFilterWhere(['t_status' => $this->t_status]);
 

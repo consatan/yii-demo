@@ -13,4 +13,6 @@ require __DIR__ . '/../vendor/yiisoft/yii2/Yii.php';
 
 $config = require __DIR__ . '/../config/test.php';
 
+require __DIR__ . '/c3.php';
+
 (new yii\web\Application($config))->run();

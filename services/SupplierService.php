@@ -52,7 +52,5 @@ class SupplierService
         } finally {
             fclose($handle);
         }
-
-        exit;
     }
 }

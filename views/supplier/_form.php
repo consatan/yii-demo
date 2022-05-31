@@ -10,7 +10,7 @@ use yii\widgets\ActiveForm;
 
 <div class="supplier-form">
 
-    <?php $form = ActiveForm::begin(); ?>
+    <?php $form = ActiveForm::begin(['options' => ['id' => 'supplier-form']]); ?>
 
     <?= $form->field($model, 'name')->textInput(['maxlength' => true]) ?>
 

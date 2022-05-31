@@ -1,0 +1,30 @@
+class_name: AcceptanceTester
+modules:
+    enabled:
+        - WebDriver:
+            url: http://localhost:8080/
+            browser: firefox
+            wait: 10
+            capabilities:
+              moz:firefoxOptions:
+                prefs:
+                  browser.download.folderList: 2
+                  browser.download.dir: "/tmp/"
+                  browser.helperApps.alwaysAsk.force: false
+        - Yii2:
+            part: orm
+            entryScript: index-test.php
+            cleanup: false
+        - Filesystem
+
+# To enable code coverage:
+coverage:
+    c3_url: http://localhost:8080/index-test.php
+    enabled: true
+    #remote: true
+    remote_config: '../codeception.yml'
+    whitelist:
+        include:
+            - models/*
+            - controllers/*
+            - services/*

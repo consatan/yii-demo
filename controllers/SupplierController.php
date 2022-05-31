@@ -63,10 +63,10 @@ class SupplierController extends Controller
      */
     public function actionCreate()
     {
-        $model = new Supplier();
+        $model = new Supplier(['scenario' => Supplier::SCENARIO_CREATE]);
 
         if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
+            if ($model->load($this->request->post()) && $model->validate() && $model->save()) {
                 return $this->redirect(['index']);
             }
         } else {
@@ -92,6 +92,7 @@ class SupplierController extends Controller
             throw new BadRequestHttpException(VarDumper::export($searchModel->getErrors()));
         }
 
-        return SupplierService::exportToCsv($searchModel, $dataProvider);
+        SupplierService::exportToCsv($searchModel, $dataProvider);
+        exit;
     }
 }

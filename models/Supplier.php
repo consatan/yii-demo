@@ -14,6 +14,9 @@ use Yii;
  */
 class Supplier extends \yii\db\ActiveRecord
 {
+    // @var string
+    const SCENARIO_CREATE = 'create';
+
     /**
      * {@inheritdoc}
      */
@@ -28,9 +31,12 @@ class Supplier extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['t_status'], 'string'],
-            [['name'], 'string', 'max' => 50],
-            [['code'], 'string', 'max' => 3],
+            [['name', 't_status'], 'required', 'on' => self::SCENARIO_CREATE],
+            [['code'], 'default', 'on' => self::SCENARIO_CREATE],
+            [['t_status'], 'default', 'value' => 'ok', 'on' => self::SCENARIO_CREATE],
+            [['t_status'], 'in', 'range' => ['ok', 'hold']],
+            [['name'], 'string', 'length' => [1, 50]],
+            [['code'], 'string', 'length' => [1, 3]],
             [['code'], 'unique'],
         ];
     }
@@ -44,7 +50,7 @@ class Supplier extends \yii\db\ActiveRecord
             'id' => Yii::t('app', 'ID'),
             'name' => Yii::t('app', 'Name'),
             'code' => Yii::t('app', 'Code'),
-            't_status' => Yii::t('app', 'T Status'),
+            't_status' => Yii::t('app', 'Status'),
         ];
     }
 

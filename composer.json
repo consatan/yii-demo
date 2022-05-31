@@ -29,11 +29,14 @@
         "codeception/module-yii2": "^1.0",
         "codeception/module-filesystem": "^1.0",
         "codeception/verify": "^2.2",
+        "codeception/module-webdriver": "^1.4",
+        "codeception/c3": "^2.6",
         "symfony/browser-kit": ">=2.7 <=4.2.4"
     },
     "config": {
         "allow-plugins": {
-            "yiisoft/yii2-composer" : true
+            "yiisoft/yii2-composer": true,
+            "codeception/c3": true
         },
         "process-timeout": 1800,
         "fxp-asset": {

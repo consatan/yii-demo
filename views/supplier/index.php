@@ -127,7 +127,9 @@ jQuery(function($) {
 
   exportBtn.click(function() {
     var ids = [],
-        url = '<?= Url::toRoute('supplier/export') ?>';
+        url = '<?= Url::toRoute('supplier/export') ?>',
+        indexUrl = '<?= Url::toRoute('supplier/index') ?>',
+        sliceIndex = indexUrl.indexOf('?r=');
 
     url += url.indexOf('?') !== -1 ? '&' : '?';
     if (!selectAllPage) {
@@ -136,7 +138,7 @@ jQuery(function($) {
       });
       url += 'SupplierSearch[export_ids]=' + ids.join();
     } else {
-      url += window.location.search.slice(1);
+      url += window.location.search.slice(1).replace(indexUrl.slice(sliceIndex + 1), '');
     }
 
     exportModal.find('input[type="checkbox"]:checked').each(function(i, item) {

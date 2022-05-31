@@ -16,8 +16,36 @@ class JsBlockTest extends \Codeception\Test\Unit
         echo $js;
         echo "</script>";
         $widget = JsBlock::end();
-        $renderingResult = current($widget->view->js[$widget->pos]);
+        $renderingResult = $widget->view->js[$widget->pos][md5($js)];
 
-        verify($renderingResult)->equals($js);
+        $this->assertEquals($js, $renderingResult);
+    }
+
+    public function testMultipJsContent()
+    {
+        $js1 = "let a = 1;";
+        $js2 = "let b = 2;";
+
+        JsBlock::begin();
+        echo <<<Javascript
+<script>
+{$js1}
+</script>
+<script>
+{$js2}
+</script>
+Javascript;
+        $widget = JsBlock::end();
+
+        $expected = <<<DOC
+
+{$js1}
+</script>
+<script>
+{$js2}
+
+DOC;
+        $renderingResult = $widget->view->js[$widget->pos][md5($expected)];
+        $this->assertEquals($renderingResult, $expected);
     }
 }
