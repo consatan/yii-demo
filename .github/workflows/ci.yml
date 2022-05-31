@@ -19,6 +19,13 @@ jobs:
         php: ['7.2', '7.3', '7.4', '8.0', '8.1']
 
     steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        ini-values: xdebug.remote_enable=On, xdebug.mode=coverage
+        coverage: xdebug
+
     - name: Start selenium server with Docker
       run: docker run -d --net=host -v /tmp:/tmp --shm-size="2g" selenium/standalone-firefox
 
@@ -43,14 +50,14 @@ jobs:
       run: cp -f vendor/codeception/c3/c3.php web/c3.php
 
     - name: Migration test database
-      run: yes | php tests/bin/yii migrate
+      run: yes | sudo php tests/bin/yii migrate
 
     - name: Run test server
-      run: nohup php -d xdebug.remote_enable=On -d xdebug.mode=coverage tests/bin/yii serve &
+      run: sudo nohup php tests/bin/yii serve &
 
     - name: Run test suite
       # fix open csv file permission denied
-      run: sudo php -d xdebug.remote_enable=On -d xdebug.mode=coverage vendor/bin/codecept run --coverage --coverage-xml
+      run: sudo php vendor/bin/codecept run --coverage --coverage-xml
 
     - name: Upload coverage result to Coveralls
       env:

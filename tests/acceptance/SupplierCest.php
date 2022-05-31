@@ -281,6 +281,7 @@ class SupplierCest
         $I->click(WebDriverBy::xpath('//div[@id="export-modal"]//button[@class="close"]'));
         $I->dontSee('Select export columns', ['xpath' => '//h5']);
         $I->dontSeeElement(WebDriverBy::id('export-modal'));
+        $I->wait(1);
 
         $I->wantTo('reopen modal');
         $I->waitForElementClickable(WebDriverBy::id('column-select-btn'));
